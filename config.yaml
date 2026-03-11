@@ -1,40 +1,56 @@
-# Settings for Clipboard Privacy Filter
-# Default PII entities to monitor: PERSON, PHONE_NUMBER, EMAIL_ADDRESS, LOCATION, DATE_TIME...
-# These are standard from Presidio-analyzer.
+# ==========================================
+# 🛡️ Private Paste 隱私過濾器設定檔
+# ==========================================
 
+# 1. 內建實體偵測 (預設開啟)
+# 這些是由 Presidio AI 模型自動辨識的類型列表。
+# 常用類型：PERSON (姓名), EMAIL_ADDRESS (電子郵件), PHONE_NUMBER (電話)
 entities:
   - PERSON
   - PHONE_NUMBER
   - EMAIL_ADDRESS
   - LOCATION
-  - GPE
   - ORG
-  - LOC
   - DATE_TIME
   - CREDIT_CARD
-  - US_SSN
-  - CRYPTO
 
-# Custom patterns for additional PII detection
+# 2. 自定義正規表達式 (Custom Patterns)
+# 如果 AI 沒抓到，你可以在這裡手動加上偵測規則。
+# 格式說明：
+# - name: 標籤名稱 (如 TAIWAN_ID，過濾後會顯示為 <TAIWAN_ID_1>)
+# - regex: 正規表達式 (Regex)
+# - score: 信心分數 (0.1 ~ 1.0)，分數越高越容易觸發
 custom_patterns:
+  # 範例：台灣身分證字號
   - name: "TAIWAN_ID"
     regex: "[A-Z][12]\\d{8}"
-    score: 0.85
-  - name: "TAIWAN_PHONE"
-    regex: "(09\\d{8}|0\\d{1,2}-\\d{6,8})"
-    score: 0.85
-  - name: "CHINESE_ADDRESS"
-    regex: "[\\u4e00-\\u9fa5]{2,10}(市|縣|區|鄉|鎮|路|街|巷|弄|號)"
-    score: 0.7
+    score: 0.9
+    
+  # 範例：英文大寫姓名 (如 AMANDA.LIU)
   - name: "LATIN_NAME"
     regex: "[A-Z]{2,}(?:\\.[A-Z]{2,})?"
-    score: 0.3
+    score: 0.4
+    
+  # 範例：常見中文姓氏開頭的名稱
   - name: "CHINESE_NAME"
     regex: "[王李張劉陳楊黃趙周吳徐孫馬朱胡郭林何羅高][\\u4e00-\\u9fa5]{1,2}"
     score: 0.4
 
-# Confidence score threshold for detection
+  # 範例：常見地址關鍵字
+  - name: "CHINESE_ADDRESS"
+    regex: "[\\u4e00-\\u9fa5]{2,10}(市|縣|區|鄉|鎮|路|街|巷|弄|號)"
+    score: 0.7
+
+  # 範例：特定關鍵字/詞彙 (多個字眼請用 | 分開)
+  # 適合用在：特定的專案代號、內部名稱、或是任何不符合規則但需遮蔽的字眼
+  - name: "FORBIDDEN_WORD"
+    regex: "(機密專案A|內部代號X|財務報表|薪資單)"
+    score: 1.0
+
+# 3. 全局設定
+# 信心門檻值：只有辨識分數高於此值的內容才會被過濾。
+# 如果發現過濾太敏感（亂抓），調高此值；若抓不到個資，調低此值。
 score_threshold: 0.3
 
-# Monitoring interval in seconds
-monitor_interval: 1.0
+# 掃描頻率 (秒)：每隔多久檢查一次剪貼簿。
+monitor_interval: 0.5

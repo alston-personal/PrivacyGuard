@@ -1,0 +1,40 @@
+# Settings for Clipboard Privacy Filter
+# Default PII entities to monitor: PERSON, PHONE_NUMBER, EMAIL_ADDRESS, LOCATION, DATE_TIME...
+# These are standard from Presidio-analyzer.
+
+entities:
+  - PERSON
+  - PHONE_NUMBER
+  - EMAIL_ADDRESS
+  - LOCATION
+  - GPE
+  - ORG
+  - LOC
+  - DATE_TIME
+  - CREDIT_CARD
+  - US_SSN
+  - CRYPTO
+
+# Custom patterns for additional PII detection
+custom_patterns:
+  - name: "TAIWAN_ID"
+    regex: "[A-Z][12]\\d{8}"
+    score: 0.85
+  - name: "TAIWAN_PHONE"
+    regex: "(09\\d{8}|0\\d{1,2}-\\d{6,8})"
+    score: 0.85
+  - name: "CHINESE_ADDRESS"
+    regex: "[\\u4e00-\\u9fa5]{2,10}(市|縣|區|鄉|鎮|路|街|巷|弄|號)"
+    score: 0.7
+  - name: "LATIN_NAME"
+    regex: "[A-Z]{2,}(?:\\.[A-Z]{2,})?"
+    score: 0.3
+  - name: "CHINESE_NAME"
+    regex: "[王李張劉陳楊黃趙周吳徐孫馬朱胡郭林何羅高][\\u4e00-\\u9fa5]{1,2}"
+    score: 0.4
+
+# Confidence score threshold for detection
+score_threshold: 0.3
+
+# Monitoring interval in seconds
+monitor_interval: 1.0

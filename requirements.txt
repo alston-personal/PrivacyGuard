@@ -1,0 +1,9 @@
+pyperclip
+pyyaml
+spacy
+presidio-analyzer
+presidio-anonymizer
+keyboard
+winotify
+pystray
+Pillow

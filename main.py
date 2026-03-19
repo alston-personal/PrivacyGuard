@@ -253,7 +253,7 @@ def check_single_instance():
 def main():
     check_single_instance()
     print("==========================================")
-    print("   CLIPBOARD PRIVACY FILTER v4.0          ")
+    print("   CLIPBOARD PRIVACY FILTER v1.0.3         ")
     print("==========================================")
     print(f"  Alt+F9  = Swap (filtered ↔ original)")
     print(f"  Alt+F10 = Open settings")

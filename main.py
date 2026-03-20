@@ -161,11 +161,13 @@ def swap_clipboard():
 
 def open_config():
     try:
-        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.yaml')
-        if os.name == 'nt':
-            os.startfile(config_path)
         if AppState.overlay:
             AppState.overlay.root.after(0, AppState.overlay.flash_settings)
+        
+        # Launch Rule Manager in a separate window
+        config_window = tk.Toplevel(AppState.overlay.root)
+        from rule_manager_gui import RuleManagerGUI
+        RuleManagerGUI(config_window)
     except Exception as e:
         print(f"Config error: {e}")
 

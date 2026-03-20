@@ -17,3 +17,16 @@ desktop.ini
 # IDEs
 .vscode/
 .idea/
+STATUS.md
+memory/
+
+lib_linux/
+venv_linux/
+venv/
+__pycache__/
+*.pyc
+.pause_filter
+vault.json
+sample_report.txt
+sample_report_filtered.txt
+test_pii_logic.py

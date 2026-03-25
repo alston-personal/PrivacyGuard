@@ -1,0 +1,29 @@
+# Privacy Guard 測試樣本文字 (Privacy Guard Test Samples)
+
+## 📌 1. 個人基本資訊 (Basic PII)
+姓名：王小明 (Wang Xiao-Ming)
+電話：0912-345-678 或 +886 912345678
+Email: alex.test_123@gmail.com
+地址：台北市信義區信義路五段7號 (Taipei 101)
+
+## 📌 2. 身份與金融資訊 (ID & Financial)
+身分證字號：A123456789
+信用卡號：4524-1234-5678-9012 (Visa)
+銀行帳號: 012-345-67890123
+
+## 📌 3. 專案與技術代號 (Custom Patterns Test)
+專案代碼：PROJECT-ZEUS-2026
+伺服器金鑰: sk_live_51MpwL2K9mXzN8q...
+內部網址: https://dev-internal.milkcat.org/api/v1/debug
+
+## 📌 4. 混合內容測試 (Mixed Context)
+「你好，我是陳大文。我的聯絡方式是 02-23456789。
+如果你有任何問題，請寄到 info@company.com。
+我目前住在台中市西屯區台灣大道三段99號。
+對了，我的訂單編號是 ORDER_998877，請幫我確認。」
+
+## 📌 5. 極限測試 (Edge Cases)
+- 只有一個字的名字: 李 X
+- 連續的 Email: test1@a.com, test2@b.org
+- 網址中的數字 (不應被當成電話): https://example.com/item/1234567890
+- 混雜英數的自訂 ID: TX-8899-AL-PQ

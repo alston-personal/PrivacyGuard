@@ -22,6 +22,7 @@ class AppState:
     filtered_text = None
     showing_original = False
     is_swapping = False
+    last_swap_time = 0
 
 # ──────────────────────────────────────────────
 # Floating Badge (like IME indicator)
@@ -29,20 +30,20 @@ class AppState:
 class StatusBadge:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("PF")
+        self.root.title("PrivacyGuard")
         self.root.overrideredirect(True)       # No title bar
         self.root.attributes("-topmost", True)  # Always on top
-        self.root.attributes("-alpha", 0.88)
+        self.root.attributes("-alpha", 0.85)
         
         screen_w = self.root.winfo_screenwidth()
         screen_h = self.root.winfo_screenheight()
-        self.w = 40
-        self.h = 40
-        self.root.geometry(f"{self.w}x{self.h}+{screen_w - self.w - 16}+{screen_h - self.h - 48}")
+        self.w = 44
+        self.h = 44
+        self.root.geometry(f"{self.w}x{self.h}+{screen_w - self.w - 20}+{screen_h - self.h - 60}")
         
         self.label = tk.Label(
-            self.root, text="🛡", font=("Segoe UI Emoji", 16),
-            bg="#22c55e", fg="white",
+            self.root, text="🛡️", font=("Segoe UI Emoji", 18),
+            bg="#16a34a", fg="white",
             cursor="hand2",
             relief="flat", bd=0
         )
@@ -54,6 +55,10 @@ class StatusBadge:
         self.label.bind("<ButtonRelease-1>", self._on_release)
         # Right-click = settings
         self.label.bind("<Button-3>", lambda e: self._open_config())
+        
+        # Tkinter Fallback Bindings (works when app is focused)
+        self.root.bind_all("<Alt-F9>", lambda e: swap_clipboard())
+        self.root.bind_all("<Alt-F10>", lambda e: self._open_config())
         
         self._dx = 0
         self._dy = 0
@@ -84,30 +89,36 @@ class StatusBadge:
     def set_protected(self):
         """Normal state: filter is active, clipboard is safe"""
         self._cancel_flash()
-        self.label.config(bg="#22c55e", text="🛡")  # Green shield
+        self.label.config(bg="#16a34a", text="🛡️")  # Green shield
     
     def set_original(self):
         """Clipboard currently contains original (unfiltered) text"""
         self._cancel_flash()
-        self.label.config(bg="#f59e0b", text="🔓")  # Orange unlocked
+        self.label.config(bg="#ea580c", text="🔓")  # Orange unlocked
     
     def flash_filtered(self):
         """Brief flash: something just got filtered"""
         self._cancel_flash()
-        self.label.config(bg="#16a34a", text="⚡")
-        self._flash_job = self.root.after(600, self.set_protected)
+        self.label.config(bg="#22c55e", text="⚡")
+        self._flash_job = self.root.after(800, self.set_protected)
     
+    def flash_swapped(self):
+        """Brief flash for hotkey feedback"""
+        orig_bg = self.label.cget("bg")
+        self.label.config(bg="#3b82f6") # Blue flash
+        self.root.after(150, lambda: self.label.config(bg=orig_bg))
+
     def flash_settings(self):
         """Brief flash: config opened"""
         self._cancel_flash()
-        self.label.config(bg="#3b82f6", text="⚙")
+        self.label.config(bg="#2563eb", text="⚙️")
         self._flash_job = self.root.after(800, self.set_protected)
     
     def flash_no_data(self):
         """Brief flash: nothing to swap"""
         self._cancel_flash()
-        self.label.config(bg="#ef4444", text="—")
-        self._flash_job = self.root.after(500, self.set_protected)
+        self.label.config(bg="#dc2626", text="❌")
+        self._flash_job = self.root.after(600, self.set_protected)
     
     def _cancel_flash(self):
         if self._flash_job:
@@ -119,6 +130,12 @@ class StatusBadge:
 # ──────────────────────────────────────────────
 def swap_clipboard():
     """Toggle clipboard between filtered ↔ original text with safety lock"""
+    # Debounce: don't allow swapping more than once every 300ms
+    now = time.time()
+    if now - AppState.last_swap_time < 0.3:
+        return
+    AppState.last_swap_time = now
+
     if AppState.original_text is None or AppState.filtered_text is None:
         # Check if current clipboard has tags we can restore manually
         current = pyperclip.paste()
@@ -135,6 +152,9 @@ def swap_clipboard():
             if AppState.overlay: AppState.overlay.root.after(0, AppState.overlay.flash_no_data)
             return
     
+    # Visual feedback for the hotkey press
+    if AppState.overlay: AppState.overlay.root.after(0, AppState.overlay.flash_swapped)
+
     # Set swap lock
     AppState.is_swapping = True
     try:
@@ -144,7 +164,7 @@ def swap_clipboard():
             pyperclip.copy(target)
             AppState.last_content = target
             AppState.showing_original = False
-            print(f"[{time.strftime('%H:%M:%S')}] 🛡️ Mode: Filtered")
+            print(f"[{time.strftime('%H:%M:%S')}] 🛡️ Shield ON: Clipboard Filtered")
             if AppState.overlay: AppState.overlay.root.after(0, AppState.overlay.set_protected)
         else:
             # Switch to original
@@ -152,11 +172,11 @@ def swap_clipboard():
             pyperclip.copy(target)
             AppState.last_content = target
             AppState.showing_original = True
-            print(f"[{time.strftime('%H:%M:%S')}] 🔓 Mode: Original")
+            print(f"[{time.strftime('%H:%M:%S')}] 🔓 Shield OFF: Original Restored")
             if AppState.overlay: AppState.overlay.root.after(0, AppState.overlay.set_original)
     finally:
-        # Keep lock for a small bit to let Windows finish clipboard write
-        time.sleep(0.1)
+        # Keep lock for a small bit to let OS finish clipboard write
+        time.sleep(0.15)
         AppState.is_swapping = False
 
 def open_config():
@@ -191,8 +211,11 @@ def monitor_loop():
                 continue
 
             current = pyperclip.paste()
+            if not current:
+                time.sleep(0.5)
+                continue
             
-            if current and current != AppState.last_content:
+            if current != AppState.last_content:
                 # If content is exactly what we just swapped, ignore
                 if current == AppState.original_text or current == AppState.filtered_text:
                     AppState.last_content = current
@@ -211,7 +234,7 @@ def monitor_loop():
                     AppState.last_content = filtered
                     
                     duration = time.time() - start
-                    print(f"[{time.strftime('%H:%M:%S')}] Filtered ({duration:.2f}s)")
+                    print(f"[{time.strftime('%H:%M:%S')}] ⚡ PII Detected & Masked ({duration:.2f}s)")
                     if AppState.overlay:
                         AppState.overlay.root.after(0, AppState.overlay.flash_filtered)
                 else:
@@ -224,7 +247,8 @@ def monitor_loop():
                         AppState.showing_original = False
                     
             time.sleep(0.5)
-        except Exception:
+        except Exception as e:
+            # print(f"Monitor error: {e}")
             time.sleep(1)
 
 def check_single_instance():
@@ -238,15 +262,6 @@ def check_single_instance():
     except socket.error as e:
         print(f"\n[ERROR] Binding failed: {e}")
         print("This usually means another instance is already running.")
-        # Try to use a small popup if possible, otherwise exit
-        try:
-            temp_root = tk.Tk()
-            temp_root.withdraw()
-            from tkinter import messagebox
-            messagebox.showwarning("Privacy Filter", "Another instance of Privacy Filter is already running.\nCheck your system tray or task manager.")
-            temp_root.destroy()
-        except:
-            pass
         sys.exit(1)
 
 # ──────────────────────────────────────────────
@@ -255,21 +270,28 @@ def check_single_instance():
 def main():
     check_single_instance()
     print("==========================================")
-    print("   CLIPBOARD PRIVACY FILTER v1.0.4         ")
+    print("   CLIPBOARD PRIVACY FILTER v1.0.5         ")
     print("==========================================")
     print(f"  Alt+F9  = Swap (filtered ↔ original)")
     print(f"  Alt+F10 = Open settings")
-    print(f"  Drag the green badge to reposition it.")
+    print(f"  Drag the badge to reposition.")
     print("==========================================")
 
     try:
         AppState.manager = PIIManager()
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error initializing PIIManager: {e}")
         return
 
-    keyboard.add_hotkey(HOTKEY_SWAP, swap_clipboard, suppress=False)
-    keyboard.add_hotkey(HOTKEY_CONFIG, open_config, suppress=False)
+    # Hotkey Registration
+    try:
+        keyboard.add_hotkey(HOTKEY_SWAP, swap_clipboard, suppress=False)
+        keyboard.add_hotkey(HOTKEY_CONFIG, open_config, suppress=False)
+        print("✅ Global Hotkeys [Alt+F9/F10] registered.")
+    except Exception as e:
+        print(f"⚠️ Global Hotkey Error: {e}")
+        print("   If you are on Linux, try running with sudo.")
+        print("   Fallback: Alt+F9 works when the green badge is focused.")
 
     AppState.last_content = pyperclip.paste()
 
@@ -278,8 +300,11 @@ def main():
 
     # Badge on main thread (tkinter requirement)
     AppState.overlay = StatusBadge()
-    print("Ready!")
+    print("🚀 Privacy Guard is Active!")
     AppState.overlay.root.mainloop()
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()

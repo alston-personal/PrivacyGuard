@@ -133,8 +133,8 @@ class RuleManagerGUI:
         self.output_text.pack(fill=tk.BOTH, expand=True)
 
         # 3. Bottom Footer
-        footer = tk.Frame(self.root, bg="#f1f5f9", padding=15)
-        footer.pack(fill=tk.X)
+        footer = tk.Frame(self.root, bg="#f1f5f9")
+        footer.pack(fill=tk.X, padx=15, pady=15)
 
         tk.Button(footer, text="+ Add New Scraper Rule", bg=COLOR_ACCENT, fg="white", font=FONT_BOLD, relief="flat", padx=15, pady=8, command=self.add_new_rule_row).pack(side=tk.LEFT)
         

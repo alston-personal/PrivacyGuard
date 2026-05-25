@@ -128,6 +128,18 @@ class StatusBadge:
 # ──────────────────────────────────────────────
 # Actions
 # ──────────────────────────────────────────────
+# Helper to standardize clipboard text comparison to avoid Windows carriage-return gotchas
+def normalize_text(text):
+    if text is None:
+        return ""
+    return text.replace('\r\n', '\n').strip()
+
+def is_text_equal(t1, t2):
+    return normalize_text(t1) == normalize_text(t2)
+
+# ──────────────────────────────────────────────
+# Actions
+# ──────────────────────────────────────────────
 def swap_clipboard():
     """Toggle clipboard between filtered ↔ original text with safety lock"""
     # Debounce: don't allow swapping more than once every 300ms
@@ -187,7 +199,12 @@ def open_config():
         # Launch Rule Manager in a separate window
         config_window = tk.Toplevel(AppState.overlay.root)
         from rule_manager_gui import RuleManagerGUI
-        RuleManagerGUI(config_window)
+        
+        # Always resolve configuration path relative to the application's actual directory
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+        config_path = os.path.join(app_dir, 'config.yaml')
+        
+        RuleManagerGUI(config_window, config_path=config_path)
     except Exception as e:
         print(f"Config error: {e}")
 
@@ -215,9 +232,9 @@ def monitor_loop():
                 time.sleep(0.5)
                 continue
             
-            if current != AppState.last_content:
+            if not is_text_equal(current, AppState.last_content):
                 # If content is exactly what we just swapped, ignore
-                if current == AppState.original_text or current == AppState.filtered_text:
+                if is_text_equal(current, AppState.original_text) or is_text_equal(current, AppState.filtered_text):
                     AppState.last_content = current
                     continue
 
@@ -241,7 +258,7 @@ def monitor_loop():
                     # New normal content copied
                     AppState.last_content = current
                     # If this is not what we stored, clear the swap memory to avoid confusion
-                    if current != AppState.original_text:
+                    if not is_text_equal(current, AppState.original_text):
                         AppState.original_text = None
                         AppState.filtered_text = None
                         AppState.showing_original = False

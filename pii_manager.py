@@ -10,8 +10,18 @@ import time
 
 class PIIManager:
     def __init__(self, config_path='config.yaml', vault_path='vault.json'):
-        self.config_path = f"{os.getcwd()}/{config_path}"
-        self.vault_path = f"{os.getcwd()}/{vault_path}"
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        if os.path.isabs(config_path):
+            self.config_path = config_path
+        else:
+            self.config_path = os.path.join(base_dir, config_path)
+            
+        if os.path.isabs(vault_path):
+            self.vault_path = vault_path
+        else:
+            self.vault_path = os.path.join(base_dir, vault_path)
+            
         self.load_config()
         
         # Configure Presidio for Chinese support

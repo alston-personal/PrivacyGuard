@@ -53,8 +53,13 @@ class StatusBadge:
         self.label.bind("<ButtonPress-1>", self._start_drag)
         self.label.bind("<B1-Motion>", self._on_drag)
         self.label.bind("<ButtonRelease-1>", self._on_release)
-        # Right-click = settings
-        self.label.bind("<Button-3>", lambda e: self._open_config())
+        
+        # Right-click context menu
+        self.menu = tk.Menu(self.root, tearoff=0)
+        self.menu.add_command(label="⚙️ 開啟設定 (Alt+F10)", command=self._open_config)
+        self.menu.add_separator()
+        self.menu.add_command(label="❌ 結束程式", command=self._exit_app)
+        self.label.bind("<Button-3>", self._show_menu)
         
         # Tkinter Fallback Bindings (works when app is focused)
         self.root.bind_all("<Alt-F9>", lambda e: swap_clipboard())
@@ -64,6 +69,13 @@ class StatusBadge:
         self._dy = 0
         self._moved = False
         self._flash_job = None
+    
+    def _show_menu(self, event):
+        self.menu.post(event.x_root, event.y_root)
+        
+    def _exit_app(self):
+        AppState.running = False
+        self.root.quit()
     
     def _start_drag(self, event):
         self._dx = event.x

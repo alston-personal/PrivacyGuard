@@ -70,20 +70,28 @@ class RuleManagerGUI:
         tk.Button(file_btn_frame, text="💾 Save Copy", command=self.save_rules_as, **btn_opts).pack(side=tk.LEFT, padx=5)
         tk.Button(file_btn_frame, text="📂 Test Samples", command=self.load_sample_file, **btn_opts).pack(side=tk.LEFT, padx=5)
 
-        # 2. Main Paned Content
+        # 3. Bottom Footer (Packed first at the bottom so it is ALWAYS visible!)
+        footer = tk.Frame(self.root, bg="#f1f5f9")
+        footer.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=15)
+
+        tk.Button(footer, text="+ Add New Scraper Rule", bg=COLOR_ACCENT, fg="white", font=FONT_BOLD, relief="flat", padx=15, pady=8, command=self.add_new_rule_row).pack(side=tk.LEFT)
+        
+        self.apply_btn = tk.Button(footer, text="🚀 Save & Hot-Reload Config", bg=COLOR_SUCCESS, fg="white", font=FONT_BOLD, relief="flat", padx=20, pady=8, command=self.save_and_apply)
+        self.apply_btn.pack(side=tk.RIGHT)
+
+        # 2. Main Paned Content (Fills the remaining area in the center/top)
         main_paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
-        main_paned.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
+        main_paned.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=15, pady=(15, 0))
 
         # Left: Rule List
         rules_side = ttk.Frame(main_paned, padding=5)
         main_paned.add(rules_side, weight=2)
         
-        # Header with Add button
+        # Header (Top Add button removed to keep layout clean and simple)
         header_frame = tk.Frame(rules_side, bg=COLOR_BG)
         header_frame.pack(fill=tk.X, pady=(0, 10))
         
         ttk.Label(header_frame, text="Detection Rules Architecture", style="Header.TLabel").pack(side=tk.LEFT)
-        tk.Button(header_frame, text="➕ Add Rule", bg=COLOR_ACCENT, fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=10, pady=2, command=self.add_new_rule_row).pack(side=tk.RIGHT)
         
         ttk.Label(rules_side, text="💡 Rules are applied in the order shown below. Drag '⠿' handle to reorder.", font=("Segoe UI", 9), foreground="#64748b").pack(anchor="nw", pady=(0, 10))
 
@@ -132,14 +140,7 @@ class RuleManagerGUI:
         self.output_text = scrolledtext.ScrolledText(preview_side, height=18, font=("Consolas", 11), bg="#f8fafc", bd=1, relief="solid")
         self.output_text.pack(fill=tk.BOTH, expand=True)
 
-        # 3. Bottom Footer
-        footer = tk.Frame(self.root, bg="#f1f5f9")
-        footer.pack(fill=tk.X, padx=15, pady=15)
 
-        tk.Button(footer, text="+ Add New Scraper Rule", bg=COLOR_ACCENT, fg="white", font=FONT_BOLD, relief="flat", padx=15, pady=8, command=self.add_new_rule_row).pack(side=tk.LEFT)
-        
-        self.apply_btn = tk.Button(footer, text="🚀 Save & Hot-Reload Config", bg=COLOR_SUCCESS, fg="white", font=FONT_BOLD, relief="flat", padx=20, pady=8, command=self.save_and_apply)
-        self.apply_btn.pack(side=tk.RIGHT)
 
     def load_rules_to_ui(self, custom_source=None):
         # Clear existing

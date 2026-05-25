@@ -16,7 +16,7 @@ FONT_MAIN = ("Segoe UI", 10)
 FONT_BOLD = ("Segoe UI", 10, "bold")
 
 class RuleManagerGUI:
-    def __init__(self, root, config_path='config.yaml'):
+    def __init__(self, root, config_path='config.yaml', manager=None):
         self.root = root
         self.root.title("🛡️ Privacy Guard - Pattern Studio")
         self.root.geometry("1100x850")
@@ -29,7 +29,7 @@ class RuleManagerGUI:
         else:
             self.config_path = config_path
             
-        self.manager = PIIManager(config_path=self.config_path)
+        self.manager = manager if manager else PIIManager(config_path=self.config_path)
         self.rules = [] # List of dicts representing each rule row
         
         self.dragged_index = None

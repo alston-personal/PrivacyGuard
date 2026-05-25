@@ -228,7 +228,7 @@ def open_config():
         app_dir = os.path.dirname(os.path.abspath(__file__))
         config_path = os.path.join(app_dir, 'config.yaml')
         
-        RuleManagerGUI(config_window, config_path=config_path)
+        RuleManagerGUI(config_window, config_path=config_path, manager=AppState.manager)
     except Exception as e:
         AppState.config_window_active = False
         print(f"Config error: {e}")
@@ -237,8 +237,45 @@ def open_config():
 # Monitor Loop (background thread)
 # ──────────────────────────────────────────────
 def monitor_loop():
+    # Setup initial config tracking
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(app_dir, 'config.yaml')
+    last_mtime = 0
+    if os.path.exists(config_path):
+        try:
+            last_mtime = os.path.getmtime(config_path)
+        except OSError:
+            pass
+
     while AppState.running:
         try:
+            # Automatic external config file watcher
+            if os.path.exists(config_path):
+                try:
+                    mtime = os.path.getmtime(config_path)
+                    if last_mtime == 0:
+                        last_mtime = mtime
+                    elif mtime > last_mtime:
+                        last_mtime = mtime
+                        print(f"[{time.strftime('%H:%M:%S')}] ⚙️ External config.yaml change detected! Hot-reloading rules...")
+                        AppState.manager.load_config()
+                        
+                        # Recreate Presidio analyzer registry in correct order
+                        from presidio_analyzer import RecognizerRegistry, Pattern, PatternRecognizer
+                        registry = RecognizerRegistry()
+                        registry.load_predefined_recognizers()
+                        
+                        for cp in AppState.manager.custom_patterns:
+                            p = Pattern(name=cp['name'], regex=cp['regex'], score=cp['score'])
+                            rec = PatternRecognizer(supported_entity=cp['name'], patterns=[p], supported_language='zh')
+                            registry.add_recognizer(rec)
+                            if cp['name'] not in AppState.manager.entities:
+                                AppState.manager.entities.append(cp['name'])
+                        
+                        AppState.manager.analyzer.registry = registry
+                except Exception:
+                    pass
+
             if AppState.is_swapping:
                 time.sleep(0.1)
                 continue

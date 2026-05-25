@@ -22,8 +22,14 @@ class RuleManagerGUI:
         self.root.geometry("1100x850")
         self.root.configure(bg=COLOR_BG)
         
-        self.config_path = config_path
-        self.manager = PIIManager(config_path=config_path)
+        # Resolve config_path relative to this script's directory if relative
+        if not os.path.isabs(config_path):
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            self.config_path = os.path.join(base_dir, config_path)
+        else:
+            self.config_path = config_path
+            
+        self.manager = PIIManager(config_path=self.config_path)
         self.rules = [] # List of dicts representing each rule row
         
         self.dragged_index = None

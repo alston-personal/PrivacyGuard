@@ -23,6 +23,7 @@ class AppState:
     showing_original = False
     is_swapping = False
     last_swap_time = 0
+    config_window_active = False
 
 # ──────────────────────────────────────────────
 # Floating Badge (like IME indicator)
@@ -204,12 +205,23 @@ def swap_clipboard():
         AppState.is_swapping = False
 
 def open_config():
+    if AppState.config_window_active:
+        return
+        
     try:
+        AppState.config_window_active = True
         if AppState.overlay:
             AppState.overlay.root.after(0, AppState.overlay.flash_settings)
         
         # Launch Rule Manager in a separate window
         config_window = tk.Toplevel(AppState.overlay.root)
+        
+        def on_close():
+            AppState.config_window_active = False
+            config_window.destroy()
+            
+        config_window.protocol("WM_DELETE_WINDOW", on_close)
+        
         from rule_manager_gui import RuleManagerGUI
         
         # Always resolve configuration path relative to the application's actual directory
@@ -218,6 +230,7 @@ def open_config():
         
         RuleManagerGUI(config_window, config_path=config_path)
     except Exception as e:
+        AppState.config_window_active = False
         print(f"Config error: {e}")
 
 # ──────────────────────────────────────────────
